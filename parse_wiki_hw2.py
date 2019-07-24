@@ -4,45 +4,56 @@
 import collections
 import requests
 import re
-import lxml.html
-import pprint
 
 
-def return_wiki_html(topic):
-    wiki_request = requests.get(f'https://ru.wikipedia.org/wiki/{topic.capitalize()}')
+def return_html_from_url(topic_url):
+    wiki_request = requests.get(topic_url)
     # print(wiki_request.content)
     return wiki_request.text
 
 
 def find_first_url(wiki_text):
-    first_url = re.findall('(?:(?:https?|ftp|file):\/\/|www\.|ftp\.)'
-                           '(?:\([-A-Z0-9+&@#/%=~_|$?!:,.]*\)|[-A-Z0-9+&@#/%=~_|$?!:,.])*'
-                           '(?:\([-A-Z0-9+&@#/%=~_|$?!:,.]*\)|[A-Z0-9+&@#/%=~_|$])',
-                           wiki_text)
-    return first_url
+    pattern = r'title=\"Редактировать раздел «Ссылки»\"(.{1,})\n(<ul>(.{1,}))'
+    spam = re.findall(pattern, wiki_text)
+
+    pattern_link = r'href=\"(.*?)\"'
+    links = re.findall(pattern_link, str(spam))
+
+    first_link = links[1]
+    # print(first_link)
+
+    return first_link
 
 
-def return_words(topic):
-    wiki_html = return_wiki_html(topic)
-    words = re.findall('[а-яА-Я]{3,}', wiki_html)
+def return_words(topic_url):
+    text_html = return_html_from_url(topic_url)
+    #print(text_html)
+    words = re.findall('[a-zA-Z]{3,}', text_html)
     words_counter = collections.Counter()
     for word in words:
         words_counter[word] += 1
-    for word in words_counter.most_common(10):
-        print(f'Слово {word[0]} встречается {word[1]} раз')
+
     return words_counter.most_common(10)
 
+def write_output_file(words_most_common):
+    f = open('words_most_common.txt', 'w', encoding='utf-8')
+    for word in words_most_common:
+        f.write(f'Слово {word[0]} встречается {word[1]} раз\n')
+    f.close()
 
-# 'https://en.wikipedia.org/wiki/City_Newspaper'
-wiki_text = return_wiki_html('Трям!_Здравствуйте!')
+# ссылка на топик википедии
+wiki_url = f'https://ru.wikipedia.org/wiki/' \
+    f'%D0%9C%D0%B0%D1%88%D0%B8%D0%BD%D0%BD%D0%BE%D0%B5_' \
+    f'%D0%BE%D0%B1%D1%83%D1%87%D0%B5%D0%BD%D0%B8%D0%B5'
 
-doc = lxml.html.document_fromstring(wiki_text)
-links = doc.xpath('//*[@id="mw-pages"]//li[a]/a')
-for link in links:
-  print(link.get('href'))
-# pprint.pprint(wiki_req.json())
-# pprint.pprint(wiki_text)
-# f = open('wiki.txt', 'w', encoding='utf-8')
-# pprint.pprint(find_first_url(wiki_text))
-# f.write(wiki_text)
-# f.close()
+# получаем html-текст из get-запроса по ссылке
+wiki_text = return_html_from_url(wiki_url)
+
+# ищем первую ссылку из раздела Ссылки
+first_url = find_first_url(wiki_text)
+
+# считаем слова, которые есть на странице по найденной ссылке
+words = return_words(first_url)
+
+# запись результатов в файл
+write_output_file(words)
