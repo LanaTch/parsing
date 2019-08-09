@@ -30,7 +30,7 @@ MVIDEO_DB.drop()
 
 driver = webdriver.Chrome()
 driver.get("https://www.mvideo.ru/")
-driver.implicitly_wait(10) # максимальное время ожидания появление элементов на странице
+driver.implicitly_wait(10)  # максимальное время ожидания появление элементов на странице
 
 # тк кнопка прокрутки страниц "хиты продаж" появляется только при наведении курсора
 # на блок. наводим и держим
@@ -43,7 +43,7 @@ next_btn = driver.find_element_by_xpath('//div[contains(text(), "Хиты про
 find_hits_and_add_to_db(block_hits, MVIDEO_DB)
 for _ in range(3):
     next_btn.click()
-    time.sleep(3) # надо, чтобы после прокрутки списка хитов успело обновится содержание элементов
+    time.sleep(3)  # надо, чтобы после прокрутки списка хитов успело обновится содержание элементов
     find_hits_and_add_to_db(block_hits, MVIDEO_DB)
 
 driver.close()
